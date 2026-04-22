@@ -2,8 +2,6 @@
 Computational validation of nanozyme-enhanced metabolic rescue for chronic wound healing — using COBRApy FBA/FVA on the E. coli core model to simulate hypoxia, model catalytic nanozyme intervention, and demonstrate restoration of ATP production and redox balance.
 # AKE NanoHeal — Nanozyme Metabolic Rescue Simulator
 
-> **Team:** Sampriti Halder · Ashna Rahul Sabnis · Ananya Leka R A · N Mrithula · Pritika Kasinathan  
-> **Project:** FRAMESHIFTS Problem 4 | Metabolic Modeling of Nanozyme-Enhanced Tissue Regeneration
 
 ---
 
