@@ -1,0 +1,75 @@
+import cobra
+from cobra.io import load_model
+from cobra.flux_analysis import flux_variability_analysis
+import matplotlib.pyplot as plt
+import numpy as np
+
+m = load_model("e_coli_core")
+
+o2_reactions = [r.id for r in m.reactions if "o2" in r.id.lower()]
+print("O2-related reactions:", o2_reactions)
+
+m.reactions.get_by_id("EX_o2_e").bounds = (0, 0)
+sol_hypoxia = m.optimize()
+print("Hypoxia Biomass:", sol_hypoxia["BIOMASS_Ecoli_core_w_GAM"])
+
+m.reactions.get_by_id("EX_o2_e").bounds = (-20, 1000)
+sol_normal = m.optimize()
+print("Normal Biomass:", sol_normal["BIOMASS_Ecoli_core_w_GAM"])
+
+m.reactions.get_by_id("ATPS4r").bounds  = (0, 1000)
+m.reactions.get_by_id("NADH16").bounds  = (0, 1000)
+m.reactions.get_by_id("NADTRHD").bounds = (0, 1000)
+sol_nano = m.optimize()
+print("Nanozyme Biomass:", sol_nano["BIOMASS_Ecoli_core_w_GAM"])
+
+print(f"\n--- COMPARISON ---")
+print(f"Hypoxia   Biomass: {sol_hypoxia['BIOMASS_Ecoli_core_w_GAM']:.4f}")
+print(f"Normal    Biomass: {sol_normal['BIOMASS_Ecoli_core_w_GAM']:.4f}")
+print(f"Nanozyme  Biomass: {sol_nano['BIOMASS_Ecoli_core_w_GAM']:.4f}")
+
+conditions = ["Hypoxia", "Normal\nCondition", "Nanozyme"]
+biomass_values = [
+    sol_hypoxia["BIOMASS_Ecoli_core_w_GAM"],
+    sol_normal["BIOMASS_Ecoli_core_w_GAM"],
+    sol_nano["BIOMASS_Ecoli_core_w_GAM"],
+]
+
+plt.figure()
+plt.bar(conditions, biomass_values)
+plt.xlabel("Condition")
+plt.ylabel("Biomass")
+plt.title("FBA: Biomass Comparison")
+plt.tight_layout()
+plt.show()
+
+reactions = ["ATPS4r", "NADH16", "NADTRHD", "EX_o2_e"]
+
+m.reactions.get_by_id("EX_o2_e").bounds = (0, 0)
+fva_hypoxia = flux_variability_analysis(m, reaction_list=reactions)
+
+m.reactions.get_by_id("EX_o2_e").bounds = (-20, 1000)
+m.reactions.get_by_id("ATPS4r").bounds  = (0, 1000)
+m.reactions.get_by_id("NADH16").bounds  = (0, 1000)
+m.reactions.get_by_id("NADTRHD").bounds = (0, 1000)
+fva_nano = flux_variability_analysis(m, reaction_list=reactions)
+
+hyp_min  = fva_hypoxia["minimum"].values
+hyp_max  = fva_hypoxia["maximum"].values
+nano_min = fva_nano["minimum"].values
+nano_max = fva_nano["maximum"].values
+
+x          = np.arange(len(reactions))
+hyp_range  = np.abs(np.array(hyp_max)  - np.array(hyp_min))
+nano_range = np.abs(np.array(nano_max) - np.array(nano_min))
+
+plt.figure()
+plt.errorbar(x, hyp_min,  yerr=hyp_range,  fmt='o', label="Hypoxia")
+plt.errorbar(x, nano_min, yerr=nano_range, fmt='o', label="Nanozyme")
+plt.xticks(x, reactions)
+plt.xlabel("Reactions")
+plt.ylabel("Flux Range")
+plt.title("FVA: Flux Flexibility Comparison")
+plt.legend()
+plt.tight_layout()
+plt.show()
